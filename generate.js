@@ -1,10 +1,11 @@
+require('dotenv').config();
 const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 
 const COMPLETED_TOPICS_PATH = "./completedTopics.json";
 const OUTPUT_DIR = "."; // root directory
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 // Load completed topics
@@ -14,10 +15,12 @@ const completedTopics = JSON.parse(fs.readFileSync(COMPLETED_TOPICS_PATH, "utf-8
 async function getNewTopic() {
   const systemPrompt = `
 You're an AI for "cipher nichu" hosted at fun.nichu.dev.
-Generate a short, funny, thoughtful topic that could surprise users in Google Search when they land on the page.
+Your goal is to generate a single, simple, funny, or common question that people might Google.
+The question should be easy for anyone to understand.
+
 Avoid these topics:\n${completedTopics.map(t => `"${t}"`).join(", ")}
 
-Your reply should be a SINGLE creative topic title only. No explanation.
+Return ONLY the question. No extra text or explanation.
 `;
 
   const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -27,6 +30,7 @@ Your reply should be a SINGLE creative topic title only. No explanation.
       contents: [{ role: "user", parts: [{ text: systemPrompt }] }]
     })
   });
+
 
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
@@ -76,8 +80,8 @@ function slugify(text) {
 
 // Send notification to Telegram
 async function sendTelegramNotification(title, filename) {
-  const telegramApiUrl = "https://api.telegram.org/bot1946326672:AAEwXYJ0QjXFKcpKMmlYD0V7-3TcFs_tcSA/sendMessage";
-  const chatId = "-1001723645621";
+  const telegramApiUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
   const message = `New page generated!\n\n*${title}*\n\n[https://fun.nichu.dev/${filename}](https://fun.nichu.dev/${filename})`;
 
   try {

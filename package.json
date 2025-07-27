@@ -1,0 +1,17 @@
+{
+  "name": "fun",
+  "version": "1.0.0",
+  "main": "generate.js",
+  "scripts": {
+    "start": "node generate.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "uuid": "^11.1.0"
+  }
+}
