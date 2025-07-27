@@ -1,0 +1,7 @@
+const { encode } = require('./obfuscator');
+
+module.exports = {
+  GEMINI_API_KEY: "QUl6YVN5RHpHTkU1N3RKaTNYR3JHdGNtUjhiNnNEQ0xkYl9UdmM0",
+  TELEGRAM_BOT_TOKEN: "MTk0NjMyNjY3MjpBQUV3WFlKMFFqWEZLY3BLTW1sWUQwVjctM1RjRnNfdGNTQQ==",
+  TELEGRAM_CHAT_ID: "LTEwMDE3MjM2NDU2MjE=",
+};

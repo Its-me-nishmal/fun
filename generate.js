@@ -1,4 +1,5 @@
-require('dotenv').config();
+const config = require('./config');
+const { decode } = require('./obfuscator');
 const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
@@ -6,7 +7,7 @@ const { v4: uuidv4 } = require("uuid");
 const COMPLETED_TOPICS_PATH = "./completedTopics.json";
 const OUTPUT_DIR = "."; // root directory
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY = decode(config.GEMINI_API_KEY);
 
 // Load completed topics
 const completedTopics = JSON.parse(fs.readFileSync(COMPLETED_TOPICS_PATH, "utf-8"));
@@ -80,8 +81,8 @@ function slugify(text) {
 
 // Send notification to Telegram
 async function sendTelegramNotification(title, filename) {
-  const telegramApiUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const telegramApiUrl = `https://api.telegram.org/bot${decode(config.TELEGRAM_BOT_TOKEN)}/sendMessage`;
+  const chatId = decode(config.TELEGRAM_CHAT_ID);
   const message = `New page generated!\n\n*${title}*\n\n[https://fun.nichu.dev/${filename}](https://fun.nichu.dev/${filename})`;
 
   try {
