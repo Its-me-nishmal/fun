@@ -59,7 +59,7 @@ Here are the rules:
 8.  **Footer**: End the body with \`<footer>— Cipher Nichu</footer>\`.
 9.  **No Extras**: No scripts, no external links, no complex UI. It must be a single, lightweight, self-contained HTML file.
 
-Return ONLY the full HTML code, starting with \`<!DOCTYPE html>\` and ending with \`</html>\`. Do not include any other text or explanation.
+Return ONLY the full HTML code, starting with \`<!DOCTYPE html>\` and ending with \`</html>\`. Do not include any markdown code block delimiters like \`\`\`html or \`\`\`. Do not include any other text or explanation.
 `;
 
   const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -71,7 +71,35 @@ Return ONLY the full HTML code, starting with \`<!DOCTYPE html>\` and ending wit
   });
 
   const data = await res.json();
-  const html = res?.ok ? data?.candidates?.[0]?.content?.parts?.[0]?.text || null : null;
+  let html = res?.ok ? data?.candidates?.[0]?.content?.parts?.[0]?.text || null : null;
+
+  // Add Schema.org markup
+  const schemaMarkup = `
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Fun Tools by Nichu",
+  "url": "https://fun.nichu.dev",
+  "author": {
+    "@type": "Person",
+    "name": "Cipher Nichu"
+  }
+}
+</script>
+`;
+
+  // Inject schema markup into the HTML head
+  if (html) {
+    const headEndIndex = html.indexOf('</head>');
+    if (headEndIndex !== -1) {
+      html = html.substring(0, headEndIndex) + schemaMarkup + html.substring(headEndIndex);
+    } else {
+      // Fallback if </head> tag is not found (should not happen with valid HTML)
+      html += schemaMarkup;
+    }
+  }
+
   return html;
 }
 
@@ -152,7 +180,57 @@ function updateIndex(newTopic, newFilename) {
 
     // Send Telegram notification
     await sendTelegramNotification(topic, filename);
+  
+    // Generate sitemap
+    await generateSitemap();
   } catch (err) {
     console.error("❌ Failed:", err.message);
   }
-})();
+  })();
+  
+  // Generate sitemap.xml
+  async function generateSitemap() {
+    const baseUrl = "https://fun.nichu.dev/";
+    const sitemapPath = path.join(OUTPUT_DIR, "sitemap.xml");
+  
+    try {
+      const files = await fs.promises.readdir(OUTPUT_DIR);
+      const htmlFiles = files.filter(file => file.endsWith(".html") && file !== "index.html"); // Exclude index.html from sitemap
+  
+      let sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  `;
+  
+      // Add index.html to sitemap
+      sitemapContent += `  <url>
+      <loc>${baseUrl}</loc>
+      <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+    </url>
+  `;
+  
+      // Add other HTML files to sitemap
+      for (const file of htmlFiles) {
+        const loc = `${baseUrl}${file}`;
+        const lastmod = new Date().toISOString().split('T')[0]; // Assuming all generated pages are updated daily
+        const changefreq = "daily";
+        const priority = "0.8"; // Lower priority for individual pages
+  
+        sitemapContent += `  <url>
+      <loc>${loc}</loc>
+      <lastmod>${lastmod}</lastmod>
+      <changefreq>${changefreq}</changefreq>
+      <priority>${priority}</priority>
+    </url>
+  `;
+      }
+  
+      sitemapContent += `</urlset>`;
+  
+      await fs.promises.writeFile(sitemapPath, sitemapContent, "utf-8");
+      console.log("✅ Generated sitemap.xml");
+    } catch (err) {
+      console.error("❌ Failed to generate sitemap.xml:", err.message);
+    }
+  }
